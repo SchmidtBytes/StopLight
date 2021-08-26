@@ -50,7 +50,7 @@ Then put the Arduino in the base and close the door.
 
 ## Software
 
-This section gives insights about the default [StopLight_3](https://github.com/SchmidtBytes/StopLight/programs/StopLight_3/StopLight_3.ino) program.
+This section gives insights about the default [StopLight_3](https://github.com/SchmidtBytes/StopLight/blob/main/programs/StopLight_3/StopLight_3.ino) program.
 Other programs might add or delete features.
 
 The programs are all written using the [Arduino IDE](https://www.arduino.cc/en/Main/Software_).
