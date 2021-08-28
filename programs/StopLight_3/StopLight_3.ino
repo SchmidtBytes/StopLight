@@ -28,11 +28,11 @@
 #define CYCLE_TIME          10 // [ms] Time to wait in between cycles
                                // WARNING: this will affect all the animated states.
                                //          You might need to adjust the timings to fit again
-#define TURN_OFF_TIME   (3600/*[s/h]*/ * 1000/*[ms/s]*/ / CYCLE_TIME/*[ms/cycle]*/)
+#define TURN_OFF_TIME   ((uint32_t)3600/*[s/h]*/ * 1000/*[ms/s]*/ / CYCLE_TIME/*[ms/cycle]*/)
                         // Number of cycles before turning the stop light off
                         // (default: Turn off after 1 hour)
 
-int incomingByte = 0;                   // for incoming serial data
+int incoming_byte = 0;                  // for incoming serial data
 int state = 0;                          // memory for the currently active state
 uint32_t sleep_timer = TURN_OFF_TIME;   // counter to enable sleep mode
 int state_var = 0;                      // variable that can be used by the currently active state to save some information
@@ -59,32 +59,32 @@ void setup() {
 void loop() {
   if (Serial.available() > 0) {
     // read a byte from the serial interface
-    incomingByte = Serial.read();
+    incoming_byte = Serial.read();
     // convert to lower case
-    if (incomingByte >= 'A' && incomingByte <= 'Z')
-        incomingByte += 'a' - 'A';
+    if (incoming_byte >= 'A' && incoming_byte <= 'Z')
+        incoming_byte += 'a' - 'A';
 
     bool byte_accepted = true;
     // Check which state was requested and set it up if necessary
-    if(incomingByte == 'i' && state != STATE_INIT)
+    if(incoming_byte == 'i' && state != STATE_INIT)
       state = STATE_INIT;
-    else if(incomingByte == 'o' && state != STATE_OFF)
+    else if(incoming_byte == 'o' && state != STATE_OFF)
       state = STATE_OFF;
-    else if(incomingByte == 'b' && state != STATE_BUILDING)
+    else if(incoming_byte == 'b' && state != STATE_BUILDING)
       state = STATE_BUILDING;
-    else if(incomingByte == 's' && state != STATE_SUCCESS)
+    else if(incoming_byte == 's' && state != STATE_SUCCESS)
       state = STATE_SUCCESS;
-    else if(incomingByte == 'u' && state != STATE_UNSTABLE)
+    else if(incoming_byte == 'u' && state != STATE_UNSTABLE)
       state = STATE_UNSTABLE;
-    else if(incomingByte == 'f' && state != STATE_FAILED)
+    else if(incoming_byte == 'f' && state != STATE_FAILED)
       state = STATE_FAILED;
-    else if(incomingByte == 'p' && state != STATE_PREPARE)
+    else if(incoming_byte == 'p' && state != STATE_PREPARE)
       state = STATE_PREPARE;
-    else if(incomingByte == 'n' && state != STATE_NIGHT)
+    else if(incoming_byte == 'n' && state != STATE_NIGHT)
       state = STATE_NIGHT;
-    else if(incomingByte == 'c' && state != STATE_CYCLE)
+    else if(incoming_byte == 'c' && state != STATE_CYCLE)
       state = STATE_CYCLE;
-    else if(incomingByte == '$' && state != STATE_PARTY)
+    else if(incoming_byte == '$' && state != STATE_PARTY)
     {
       state = STATE_PARTY;
       change_time_r = TURN_OFF_TIME;
