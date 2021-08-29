@@ -46,6 +46,8 @@ int incoming_byte = 0;                  // for incoming serial data
 int state = 0;                          // memory for the currently active state
 bool sleep_active = true;               // Holds the current state if sleep mode is active
 uint32_t sleep_timer = TURN_OFF_TIME;   // counter to enable sleep mode
+unsigned long next_cycle = CYCLE_TIME;  // time when to start with the next cycle
+unsigned long time_mili = 0;            // Current system time in miliseconds
 int state_var = 0;                      // variable that can be used by the currently active state to save some information
                                         // This is mostly used to time the flash patterns for repeating states
 uint32_t change_time_r = TURN_OFF_TIME; // Variable to save when to change the red LED; only used in some states
@@ -311,5 +313,10 @@ void loop() {
   }
 
   // Wait some time before starting the next cycle
-  delay(CYCLE_TIME);
+  do {
+    time_mili = millis();
+  } while(time_mili <= next_cycle || (next_cycle > ((unsigned long)100 * CYCLE_TIME) && (time_mili < ((unsigned long) 90 * CYCLE_TIME))));
+  do {
+    next_cycle += CYCLE_TIME;
+  }while(next_cycle < time_mili && next_cycle >= CYCLE_TIME);
 }
