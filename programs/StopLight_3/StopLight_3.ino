@@ -4,6 +4,8 @@
   V 1.0
 */
 
+#include <EEPROM.h>
+
 // LED Pin definitions
 #define LED_RD 9
 #define LED_YE 10
@@ -11,6 +13,12 @@
 
 // Serial speed definition
 #define SERIAL_SPEED 38400
+
+// Non state commands:
+// code: e; Enables the sleep mode feature (default: enabled)
+//          WARNING this setting will be persisted and will not reset when turning the device off
+// code: d; Disables the sleep mode feature (default: enabled)
+//          WARNING this setting will be persisted and will not reset when turning the device off
 
 // stop light state definitions
 #define STATE_INIT       0 // code: i; Initialization animation
@@ -28,12 +36,15 @@
 #define CYCLE_TIME          10 // [ms] Time to wait in between cycles
                                // WARNING: this will affect all the animated states.
                                //          You might need to adjust the timings to fit again
-#define TURN_OFF_TIME   (3600/*[s/h]*/ * 1000/*[ms/s]*/ / CYCLE_TIME/*[ms/cycle]*/)
+#define TURN_OFF_TIME   ((uint32_t) 3600/*[s/h]*/ * 1000/*[ms/s]*/ / CYCLE_TIME/*[ms/cycle]*/)
                         // Number of cycles before turning the stop light off
                         // (default: Turn off after 1 hour)
 
-int incomingByte = 0;                   // for incoming serial data
+#define SLEEP_STATE_ADDR 0x000 // Location of the sleep state in the EEPROM that is read on start
+
+int incoming_byte = 0;                  // for incoming serial data
 int state = 0;                          // memory for the currently active state
+bool sleep_active = true;               // Holds the current state if sleep mode is active
 uint32_t sleep_timer = TURN_OFF_TIME;   // counter to enable sleep mode
 int state_var = 0;                      // variable that can be used by the currently active state to save some information
                                         // This is mostly used to time the flash patterns for repeating states
@@ -53,38 +64,69 @@ void setup() {
 
   // read from an unconnected analog input to initialize the random function
   randomSeed(analogRead(0));
+
+  // initialize sleep_active from EEPROM
+  incoming_byte = EEPROM.read(SLEEP_STATE_ADDR);
+  if(incoming_byte > 1) {
+    // Initialize the EEPROM with true if the value is not valid
+    EEPROM.write(SLEEP_STATE_ADDR, true);
+    incoming_byte = 1;
+  }
+  sleep_active = incoming_byte;
 }
 
 // the loop function runs over and over again forever
 void loop() {
   if (Serial.available() > 0) {
     // read a byte from the serial interface
-    incomingByte = Serial.read();
+    incoming_byte = Serial.read();
     // convert to lower case
-    if (incomingByte >= 'A' && incomingByte <= 'Z')
-        incomingByte += 'a' - 'A';
+    if (incoming_byte >= 'A' && incoming_byte <= 'Z')
+        incoming_byte += 'a' - 'A';
 
     bool byte_accepted = true;
+    // Check none state commands
+    if(incoming_byte == 'd'){
+        sleep_active = false;
+        EEPROM.write(SLEEP_STATE_ADDR, sleep_active);
+        digitalWrite(LED_YE, LOW);
+        digitalWrite(LED_GN, LOW);
+        for(uint8_t ctr = 0; ctr < 8; ctr++) {
+            digitalWrite(LED_RD, (ctr + 1)%2);
+            delay(125);
+        }
+    }
+    else if(incoming_byte == 'e') {
+        sleep_active = true;
+        EEPROM.write(SLEEP_STATE_ADDR, sleep_active);
+        digitalWrite(LED_RD, LOW);
+        digitalWrite(LED_YE, LOW);
+        for(uint8_t ctr = 0; ctr < 8; ctr++) {
+            digitalWrite(LED_GN, (ctr + 1)%2);
+            delay(125);
+        }
+    }
+
     // Check which state was requested and set it up if necessary
-    if(incomingByte == 'i' && state != STATE_INIT)
+    if(incoming_byte == 'i' && state != STATE_INIT)
       state = STATE_INIT;
-    else if(incomingByte == 'o' && state != STATE_OFF)
+    else if(incoming_byte == 'o' && state != STATE_OFF)
       state = STATE_OFF;
-    else if(incomingByte == 'b' && state != STATE_BUILDING)
+    else if(incoming_byte == 'b' && state != STATE_BUILDING)
       state = STATE_BUILDING;
-    else if(incomingByte == 's' && state != STATE_SUCCESS)
+    else if(incoming_byte == 's' && state != STATE_SUCCESS)
       state = STATE_SUCCESS;
-    else if(incomingByte == 'u' && state != STATE_UNSTABLE)
+    else if(incoming_byte == 'u' && state != STATE_UNSTABLE)
       state = STATE_UNSTABLE;
-    else if(incomingByte == 'f' && state != STATE_FAILED)
+    else if(incoming_byte == 'f' && state != STATE_FAILED)
       state = STATE_FAILED;
-    else if(incomingByte == 'p' && state != STATE_PREPARE)
+    else if(incoming_byte == 'p' && state != STATE_PREPARE)
       state = STATE_PREPARE;
-    else if(incomingByte == 'n' && state != STATE_NIGHT)
+    else if(incoming_byte == 'n' && state != STATE_NIGHT)
       state = STATE_NIGHT;
-    else if(incomingByte == 'c' && state != STATE_CYCLE)
+    else if(incoming_byte == 'c' && state != STATE_CYCLE)
       state = STATE_CYCLE;
-    else if(incomingByte == '$' && state != STATE_PARTY)
+    else if(incoming_byte == '$' && state != STATE_PARTY)
     {
       state = STATE_PARTY;
       change_time_r = TURN_OFF_TIME;
@@ -255,12 +297,18 @@ void loop() {
       state = STATE_INIT;
       break;
   }
+
   if(sleep_timer > 0)
     // count down the time when to turn the stop light off
     sleep_timer--;
-  if(sleep_timer == 0)
-    // switch to state off after the sleep_timer ran out
-    state = STATE_OFF;
+  if(sleep_timer == 0) {
+    if(sleep_active)
+      // switch to state off after the sleep_timer ran out and sleep is active
+      state = STATE_OFF;
+    else
+      // reset the sleep timer and the rgb change times
+      change_time_r = change_time_y = change_time_g = sleep_timer = TURN_OFF_TIME;
+  }
 
   // Wait some time before starting the next cycle
   delay(CYCLE_TIME);
