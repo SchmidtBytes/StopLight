@@ -84,19 +84,22 @@ The Arduino will cyclically check for new commands on the serial interface and a
 The commands are currently one letter codes for the various states.
 The state will change if the code is known and the requested state is not already active.
 
-| code | state          | description                                                          |
-|-----:|:--------------:|:---------------------------------------------------------------------|
-| i    | STATE_INIT     | Initialization animation                                             |
-| o    | STATE_OFF      | Turn off all of the LEDs                                             |
-| b    | STATE_BUILDING | Flash the yellow LED, but dim the transitions                        |
-| s    | STATE_SUCCESS  | Light up only the green LED                                          |
-| u    | STATE_UNSTABLE | Light up only the yellow LED                                         |
-| f    | STATE_FAILED   | Light up only the red LED                                            |
-| p    | STATE_PREPARE  | Light up both yellow and red                                         |
-| n    | STATE_NIGHT    | flash the yellow light, but with no dimming                          |
-| c    | STATE_CYCLE    | run a normal stop light animation                                    |
-| e    |                | Enable the sleep mode feature. This will be saved over power cycles  |
-| d    |                | Disable the sleep mode feature. This will be saved over power cycles |
+| code | state           | description                                                          |
+|-----:|:---------------:|:---------------------------------------------------------------------|
+| i    | STATE_INIT      | Initialization animation                                             |
+| o    | STATE_OFF       | Turn off all of the LEDs                                             |
+| b    | STATE_BUILDING  | Flash the yellow LED, but dim the transitions                        |
+| s    | STATE_SUCCESS   | Light up only the green LED                                          |
+| u    | STATE_UNSTABLE  | Light up only the yellow LED                                         |
+| f    | STATE_FAILED    | Light up only the red LED                                            |
+| p    | STATE_PREPARE   | Light up both yellow and red                                         |
+| n    | STATE_NIGHT     | Flash the yellow light, but with no dimming                          |
+| w    | STATE_WAIT      | Flash the red and green LEDs at the same time                        |
+| a    | STATE_ALTERNATE | Alternate between yellow and the other LEDs                          |
+| r    | STATE_ROLLING   | Rolling animation from red to green                                  |
+| c    | STATE_CYCLE     | Run a normal stop light animation                                    |
+| e    |                 | Enable the sleep mode feature. This will be saved over power cycles  |
+| d    |                 | Disable the sleep mode feature. This will be saved over power cycles |
 
 The stop light will accept the state codes both in upper and lower case letters.
 

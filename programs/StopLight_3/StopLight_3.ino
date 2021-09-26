@@ -28,9 +28,12 @@
 #define STATE_UNSTABLE   4 // code: u; Light up only the yellow LED
 #define STATE_FAILED     5 // code: f; Light up only the red LED
 #define STATE_PREPARE    6 // code: p; Light up both yellow and red
-#define STATE_NIGHT      7 // code: n; flash the yellow light, but with no dimming
-#define STATE_CYCLE     98 // code: c; run a normal stop light animation
-#define STATE_PARTY     99 // code: $; flash the LEDs at random times and brightness levels
+#define STATE_NIGHT      7 // code: n; Flash the yellow light, but with no dimming
+#define STATE_WAIT       8 // code: w; Flash the red and green LEDs at the same time
+#define STATE_ALTERNATE  9 // code: a; Alternate between yellow and the other LEDs
+#define STATE_ROLLING   10 // code: r; Rolling animation from red to green
+#define STATE_CYCLE     98 // code: c; Run a normal stop light animation
+#define STATE_PARTY     99 // code: $; Flash the LEDs at random times and brightness levels
 
 // Timing
 #define CYCLE_TIME      10 // [ms] Time to wait in between cycles
@@ -124,6 +127,12 @@ void loop() {
       state = STATE_PREPARE;
     else if(incoming_byte == 'n' && state != STATE_NIGHT)
       state = STATE_NIGHT;
+    else if(incoming_byte == 'w' && state != STATE_WAIT)
+      state = STATE_WAIT;
+    else if(incoming_byte == 'a' && state != STATE_ALTERNATE)
+      state = STATE_ALTERNATE;
+    else if(incoming_byte == 'r' && state != STATE_ROLLING)
+      state = STATE_ROLLING;
     else if(incoming_byte == 'c' && state != STATE_CYCLE)
       state = STATE_CYCLE;
     else if(incoming_byte == '$' && state != STATE_PARTY)
@@ -252,6 +261,52 @@ void loop() {
       digitalWrite(LED_GN, LOW);
       // increase the state_var to run through the animation
       state_var = (state_var + 1) % (2000/*ms*/ / CYCLE_TIME);
+      break;
+
+    case STATE_WAIT:
+      digitalWrite(LED_RD, state_var<(500/*ms*/ / CYCLE_TIME)?HIGH:LOW);
+      digitalWrite(LED_YE, LOW);
+      digitalWrite(LED_GN, state_var<(500/*ms*/ / CYCLE_TIME)?HIGH:LOW);
+      // increase the state_var to run through the animation
+      state_var = (state_var + 1) % (1000/*ms*/ / CYCLE_TIME);
+      break;
+
+    case STATE_ALTERNATE:
+      digitalWrite(LED_RD, state_var<(1000/*ms*/ / CYCLE_TIME)?HIGH:LOW);
+      digitalWrite(LED_YE, state_var<(1000/*ms*/ / CYCLE_TIME)?LOW:HIGH);
+      digitalWrite(LED_GN, state_var<(1000/*ms*/ / CYCLE_TIME)?HIGH:LOW);
+      // increase the state_var to run through the animation
+      state_var = (state_var + 1) % (2000/*ms*/ / CYCLE_TIME);
+      break;
+
+    case STATE_ROLLING:
+      if (state_var < (500/*ms*/ / CYCLE_TIME)) {
+        analogWrite(LED_RD, (255 * state_var) / (500/*ms*/ / CYCLE_TIME));
+        digitalWrite(LED_YE, LOW);
+        digitalWrite(LED_GN, LOW);        
+      }
+      else if (state_var < (1000/*ms*/ / CYCLE_TIME)) {
+        analogWrite(LED_RD, 255 - ((255 * (state_var - (500 / CYCLE_TIME))) / (500/*ms*/ / CYCLE_TIME)));
+        analogWrite(LED_YE, (255 * (state_var - (500 / CYCLE_TIME))) / (500/*ms*/ / CYCLE_TIME));
+        digitalWrite(LED_GN, LOW);
+      }
+      else if (state_var < (1500/*ms*/ / CYCLE_TIME)) {
+        digitalWrite(LED_RD, LOW);
+        analogWrite(LED_YE, 255 - ((255 * (state_var - (1000 / CYCLE_TIME))) / (500/*ms*/ / CYCLE_TIME)));
+        analogWrite(LED_GN, (255 * (state_var - (1000 / CYCLE_TIME))) / (500/*ms*/ / CYCLE_TIME));
+      }
+      else if (state_var < (2000/*ms*/ / CYCLE_TIME)) {
+        digitalWrite(LED_RD, LOW);
+        digitalWrite(LED_YE, LOW);
+        analogWrite(LED_GN, 255 - ((255 * (state_var - (1500 / CYCLE_TIME))) / (500/*ms*/ / CYCLE_TIME)));
+      }
+      else {
+        digitalWrite(LED_RD, LOW);
+        digitalWrite(LED_YE, LOW);
+        digitalWrite(LED_GN, LOW);
+      }
+      // increase the state_var to run through the animation
+      state_var = (state_var + 1) % (3000/*ms*/ / CYCLE_TIME);
       break;
 
     case STATE_CYCLE:
