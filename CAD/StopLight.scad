@@ -1,26 +1,30 @@
 /* [Customization] */
 // Ammount of LEDs for the stop light
-NUM_LIGHTS       = 3; // [20]
+NUM_LIGHTS        = 3; // [20]
 // Add or remove the sunshades
-SHADES           = true;
+SHADES            = true;
 // The length of the stop light pole
-POLE_LENGTH      = 80; // [2:0.01:200]
+POLE_LENGTH       = 80; // [2:0.01:200]
 // Make the pole a separate object
-INDEPENDENT_POLE = true;
+INDEPENDENT_POLE  = true;
 // The inner diameter of the pole
-POLE_DI          = 2; // [0:0.01:8]
+POLE_DI           = 2; // [0:0.01:8]
+// The thickness of the monitor
+MONITOR_THICKNESS = 21.5; // [0:0.1:100]
 
 /* [Enable/Disable parts] */
 // Shoe the LED housing
-ENABLE_LED_HOUSING = true;
+ENABLE_LED_HOUSING    = true;
 // Show the back of the LED housing
-ENABLE_BACK_PANEL  = true;
+ENABLE_BACK_PANEL     = true;
 // Show the pole
-ENABLE_POLE        = true;
+ENABLE_POLE           = true;
 // Show the pole base
-ENABLE_BASE        = true;
+ENABLE_BASE           = true;
 // Show the base door
-ENABLE_BASE_DOOR   = true;
+ENABLE_BASE_DOOR      = true;
+// Show the monitor holder
+ENABLE_MONITOR_HOLDER = false;
 
 /* [Cosmetic options] */
 // Show the LEDs
@@ -60,10 +64,38 @@ difference() {
             housing_back(lights=NUM_LIGHTS);
         pole(POLE_LENGTH);
         if(ENABLE_BASE_DOOR)
-        base_door();
+            base_door();
+        if(ENABLE_MONITOR_HOLDER)
+            color("#404040")translate([0,0,-POLE_LENGTH])monitor_holder(MONITOR_THICKNESS);
     }
     if(CROSS_SECTION) {
-        translate([0,-30,-POLE_LENGTH-30])cube([30,60,40+(15*NUM_LIGHTS)+POLE_LENGTH]);
+        #translate([0,-30-MONITOR_THICKNESS,-POLE_LENGTH-30])cube([30,60+MONITOR_THICKNESS,40+(15*NUM_LIGHTS)+POLE_LENGTH]);
+    }
+}
+
+module monitor_holder(thickness) {
+    translate([0,(-52/2)-((MONITOR_THICKNESS + 3)/2),0])difference() {
+        intersection() {
+        translate([0,0,-6.5])cube([55,MONITOR_THICKNESS + 2 + 2, 17],center=true);
+        translate([0,0,-188])rotate([90,0,0])cylinder(r=190,h=MONITOR_THICKNESS + 2 + 2,center=true);
+        translate([0,-(MONITOR_THICKNESS + 2 + 2)/2,2])rotate([7,0,0])translate([0,190,-10])cylinder(r=190,h=20,center=true);
+        }
+        translate([0,0,-8.5])cube([60,MONITOR_THICKNESS,16],center=true);
+    }
+    translate([0,0,-8])difference()  {
+        slanted_cube(55,55,16);
+        translate([0,0,0.8])slanted_cube(51,51,16);
+        translate([0,10,0.8])slanted_cube(20,51,16);
+    }
+    translate([0,0,-8])intersection() {
+        slanted_cube(54,54,16);
+        union() {
+            for(j = [-1,1]) {
+                for(i = [0:3]) {
+                    rotate([0,0,90*i])translate([j*16,2.5 + (50.5/2),6])sphere(d=5);
+                }
+            }
+        }
     }
 }
 
