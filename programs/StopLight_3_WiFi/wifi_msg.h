@@ -1,9 +1,10 @@
-#include "WString.h"
 #ifndef STOP_LIGHT_WIFI_MESSAGE_H
 #define STOP_LIGHT_WIFI_MESSAGE_H
 
+#include "WString.h"
 #include <NetworkClient.h>
 #include "state_machine.h"
+#include "wifi_favicons.h"
 
 // create the html code for a button
 String create_button(String name, String link, String tooltip="")
@@ -54,7 +55,10 @@ void send_html_response(NetworkClient &client, String requested_page, uint8_t me
   // the content of the HTTP response follows the header:
   client.print("<html>");
   client.print("<header>");
-  client.print("<title>Ampel</title>");
+  client.print("<title>Stop Light</title>");
+  client.print("<link rel=\"icon\" type=\"image/x-icon\" href=\"");
+  client.print(get_favicon(active_state));
+  client.print("\">");
   client.print("</header>");
 
   client.print("<style>");
@@ -76,7 +80,7 @@ void send_html_response(NetworkClient &client, String requested_page, uint8_t me
   client.print("</style>");
 
   client.print("<body>");
-  client.print("<H1><p><center>Ampel Control</center></H1><p>");
+  client.print("<H1><p><center>Stop Light Control</center></H1><p>");
 
   // Message box
   if(message == MSG_OFF) {}
